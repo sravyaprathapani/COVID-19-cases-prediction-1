@@ -2,16 +2,16 @@
 JUMP-DROP-ADJUSTED PREDICTION OF CUMULATIVE CASES OF COVID-19 USING MODIFIED SIS MODEL
 
 # Installation
-This library can be intatalled using the following command:
-library(devtools)
-install_github("RashiMohta/COVID-19-cases-prediction")
+This library can be intatalled using the following command:  
+library(devtools)  
+install_github("RashiMohta/COVID-19-cases-prediction")  
 
-This library can be imported using:
-library(adjustedPred)
+This library can be imported using:  
+library(adjustedPred)  
 
-Additional libraries to be imported:
-library(pracma)
-library(ggplot2)
+Additional libraries to be imported:  
+library(pracma)  
+library(ggplot2)  
 
 # Define constants
 name_of_state = "DL"
