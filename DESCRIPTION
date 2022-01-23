@@ -2,8 +2,8 @@ Package: adjustedPred
 Type: Package
 Title: Jump-drop adjusted prediction of cumulative infected cases
 Version: 0.1.0
-Author: Rashi Mohta, Prathapani Sravya
-Maintainer: Rashi Mohta, rashi@iitg.ac.in, rashimohta15@gmail.com
+Author: Rashi Mohta, Prathapani Sravya, Dr. Palash Ghosh
+Maintainer: Rashi Mohta <rashi@iitg.ac.in> <rashimohta15@gmail.com>
 Description: Jump-drop adjusted prediction of cumulative COVID-19 infected cases using modified SIS model
 License: What license is it under?
 Encoding: UTF-8
