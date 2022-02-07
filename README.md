@@ -56,10 +56,10 @@ for (i in 1:nrow(state_data)) {
 
 # Obtain results
 writeLines("without adjustment")  
-output_original <-sisd_cummulative(population, gamma, cur_day, last_n_day,last_limit, next_n_days, state_data, 0L,num,num_adj)  
+output_original <-sisd_cummulative(population, gamma, cur_day, start_date, last_n_day,last_limit, next_n_days, state_data, 0L,num,num_adj)  
 writeLines("\nwith adjustment")  
 num_adj = threshold(ub_for_adjustment, bound_metric, num, num_adj);  
-output_adjusted <-sisd_cummulative(population, gamma, cur_day, last_n_day,last_limit, next_n_days, state_data,1L, num,num_adj);  
+output_adjusted <-sisd_cummulative(population, gamma, cur_day, start_date, last_n_day,last_limit, next_n_days, state_data,1L, num,num_adj);  
 plot_adjustment(date, num, num_adj)  
 print(plot_cumulative(output_original, output_adjusted))  
 final = comparing_results(output_original,output_adjusted)  
