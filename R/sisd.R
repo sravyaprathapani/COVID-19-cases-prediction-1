@@ -2,17 +2,19 @@
 #' @description The C1 uses moving sample average and sample standard deviation
 #' to standardize each observation. It calculates the sample average and
 #' sample standard deviation using the data of 7 days prior to the current day.
-#' @param data array of adjusted number of daily confirmed cases
+#' @note This function is called by Cmetric function
+#' @param df Dataframe with two columns which contains dates and corresponding number of daily confirmed cases
 #' @param t Day number
 #' @return Returns the mean, standard deviation and C1 metric value
 #' @export
 
 C1 <-
-  function(data,
+  function(df,
            t) {
     if ((t-14)<=0) {
       return (list("Not possible", "Not possible", "Not possible"));
     }
+    data <- df[,2];
     mean <- mean(data[(t-7):(t-1)]);
     var <- 0;
     for (i in (t-7):(t-1)) {
@@ -29,19 +31,20 @@ C1 <-
 #' @description The C2 uses moving sample average and sample standard deviation
 #' to standardize each observation. It calculates the sample average and
 #' sample standard deviation using the data of seven days and a 2-day lag.
-#' @param data array of adjusted number of daily confirmed cases
+#' @note This function is called by Cmetric function
+#' @param df Dataframe with two columns which contains dates and corresponding number of daily confirmed cases
 #' @param t Day number
 #' @return Returns the mean, standard deviation and C2 metric value
 #' @export
 
 C2 <-
-  function(data,
+  function(df,
            t) {
     if(t-18<=0) {
       return (list("Not possible", "Not possible", "Not possible"));
     }
+    data <- df[,2];
     mean <- mean(data[(t-9):(t-3)]);
-    var <- 0;
     var <- 0;
     for (i in (t-9):(t-3)) {
       m <- mean(data[(i-9):(i-3)]);
@@ -55,19 +58,20 @@ C2 <-
 
 #' Calculates the mean, standard deviation and C2 metric value taking a 1 day lag
 #' @description This is similar to the function C2, but it uses the data of seven days and a 1-day lag.
-#' @param data array of adjusted number of daily confirmed cases
+#' @note This function is called by Cmetric function
+#' @param df Dataframe with two columns which contains dates and corresponding number of daily confirmed cases
 #' @param t Day number
 #' @return Returns the mean, standard deviation and C2 metric value
 #' @export
 
 C2_1day <-
-  function(data,
+  function(df,
            t) {
     if(t-16<=0) {
       return (list("Not possible", "Not possible", "Not possible"));
     }
+    data <- df[,2];
     mean <- mean(data[(t-8):(t-2)]);
-    var <- 0;
     var <- 0;
     for (i in (t-8):(t-2)) {
       m <- mean(data[(i-8):(i-2)]);
@@ -81,50 +85,53 @@ C2_1day <-
 
 #' Calculates the mean, standard deviation and C3 metric value taking a 2 day lag
 #' @description The C3 uses information from the C2 statistic of the past two days.
-#' @param data array of adjusted number of daily confirmed cases
+#' @note This function is called by Cmetric function
+#' @param df Dataframe with two columns which contains dates and correspoding number of daily confirmed cases
 #' @param t Day number
 #' @return Returns the mean, standard deviation and C3 metric value
 #' @export
 
 C3 <-
-  function(data,
+  function(df,
            t) {
     res <- 0;
     for (i in (t-2):t) {
-      if(C2(data,i)[1] == "Not possible") {
+      if(C2(df,i)[1] == "Not possible") {
         return (list("Not possible", "Not possible", "Not possible"));
       }
       else
       {
-        mean = as.numeric(C2(data,i)[1]);
-        sd = as.numeric(C2(data,i)[2]);
-        c2 = as.numeric(C2(data,i)[3]);
+        c2val = C2(df,i);
+        mean = as.numeric(c2val[1]);
+        sd = as.numeric(c2val[2]);
+        c2 = as.numeric(c2val[3]);
         res <- res+ max(0,c2-1);
       }
     }
     return (list(mean, sd, res));
   }
-
 #' Calculates the mean, standard deviation and C3 metric value taking a 1 day lag
 #' @description This is similar to the function C3, but it uses the data of seven days and a 1-day lag.
-#' @param data array of adjusted number of daily confirmed cases
+#' @note This function is called by Cmetric function
+#' @param df Dataframe with two columns which contains dates and corresponding number of daily confirmed cases
 #' @param t Day number
 #' @return Returns the mean, standard deviation and C3 metric value
 #' @export
 
 C3_1day <-
-  function(data,
+  function(df,
            t) {
     res <- 0;
     for (i in (t-2):t) {
-      if(C2_1day(data,i)[1] == "Not possible") {
+      if(C2_1day(df,i)[1] == "Not possible") {
         return (list("Not possible", "Not possible", "Not possible"));
       }
       else
       {
-        mean = as.numeric(C2_1day(data,i)[1]);
-        sd = as.numeric(C2_1day(data,i)[2]);
-        c2 = as.numeric(C2_1day(data,i)[3]);
+        c2val = C2_1day(df,i);
+        mean = as.numeric(c2val[1]);
+        sd = as.numeric(c2val[2]);
+        c2 = as.numeric(c2val[3]);
         res <- res+ max(0,c2-1);
       }
     }
@@ -133,41 +140,42 @@ C3_1day <-
 
 #' Returns the value of C1, C2 or C3 metric and the corresponding limit
 #' @description Calls C1, C2, C3 functions and returns the respective metric value and the threshold limit.
+#' @note This function is called by threshold function
 #' @param bound_metric C1, C2, or C3 metric can be selected
-#' @param num_adj array of adjusted number of daily confirmed cases
+#' @param df Dataframe with two columns which contains dates and corresponding number of daily confirmed cases
 #' @param i Day number
 #' @return Returns the mean, standard deviation, threshold value for that metric and the metric value
 #' @export
 
-Cmetric <-
+Cmetric<-
   function(bound_metric,
-           num_adj,
+           df,
            i){
     if (bound_metric == 'C1') {
       limit <- 3
-      c = C1(num_adj,i)
+      c = C1(df,i)
     }
-
+    
     if (bound_metric == 'C2') {
       limit <- 3
-      c = C2(num_adj,i)
+      c = C2(df,i)
     }
-
+    
     if (bound_metric == 'C2_1day') {
       limit <- 3
-      c = C2_1day(num_adj,i)
+      c = C2_1day(df,i)
     }
-
+    
     if (bound_metric == 'C3') {
       limit <- 2
-      c = C3(num_adj,i)
+      c = C3(df,i)
     }
-
+    
     if (bound_metric == 'C3_1day') {
       limit <- 2
-      c = C3_1day(num_adj,i)
+      c = C3_1day(df,i)
     }
-
+    
     if (c[1] == 'Not possible') {
       return (list("Not possible", "Not possible", "Not possible", "Not possible"));
     }
@@ -179,28 +187,31 @@ Cmetric <-
     return(list(mean,sd,limit,res));
   }
 
-#' Identifies and adjusts
+#' Identifies and adjusts jumps and drops
 #' @description Identifies jumps and drops using given metric and adjusts if the length of the jump or drop is less than the upper bound.
+#' @note This function is called by sisd_cummulative function
 #' @param ub_for_adjustment upper bound for the duration of a jump or drop
 #' @param bound_metric C1, C2, or C3 metric can be selected
-#' @param num array of observed number of daily confirmed cases
-#' @param num_adj Copy of num for adjustment
-#' @return adjusted data using given metric
+#' @param df_confirmed_values Dataframe of dates and observed number of daily confirmed cases
+#' @param df_adjusted_confirmed_values Copy of df_confirmed_values for adjustment
+#' @return Dataframe of dates and adjusted data using given metric
 #' @export
 
 threshold <-
   function(ub_for_adjustment,
            bound_metric,
-           num,
-           num_adj) {
-
-    n <- length(num_adj);
+           df_confirmed_values,
+           df_adjusted_confirmed_values
+  ) {
+    
+    n <- nrow(df_adjusted_confirmed_values);
+    
     for (i in 1:n) {
-      if(Cmetric(bound_metric,num_adj,i)[1] == "Not possible"){
+      if(Cmetric(bound_metric,df_adjusted_confirmed_values,i)[1] == "Not possible"){
         next;
       }
       else{
-        cval = Cmetric(bound_metric,num_adj,i);
+        cval = Cmetric(bound_metric,df_adjusted_confirmed_values,i);
         mean = as.numeric(cval[1]);
         sd = as.numeric(cval[2]);
         limit = as.numeric(cval[3]);
@@ -213,30 +224,31 @@ threshold <-
       else{
         #calculate number of consecutive days outside CI
         t = i+1
-        res = Cmetric(bound_metric,num_adj,t)[4];
-        while((t <= length(num_adj)) && (res > limit || res < (-1*limit))){
+        res = C(bound_metric,df_adjusted_confirmed_values,t)[4];
+        while((t <= n) && (res > limit || res < (-1*limit))){
           t <- t+1
-          res = Cmetric(bound_metric,num_adj,t)[4]
+          res = C(bound_metric,df_adjusted_confirmed_values,t)[4]
         }
         # length of interval outside of CI
         length_of_jd = t - i
-
+        
         #if such number of days are more than these many days, then do not adjust
         #else adjust data with averages
         if(length_of_jd <= ub_for_adjustment){
-          if( t <= length( num_adj ) ){
+          if( t <= n  ){
             for ( a in 1:length_of_jd )
-              num_adj[i+a-1] = mean/2 + num[t]/2
+              df_adjusted_confirmed_values[i+a-1,2] = mean/2 + df_confirmed_values[t,2]/2
           }
           else{
             for ( a in 1:length_of_jd )
-              num_adj[i+a-1] = mean
+              df_adjusted_confirmed_values[i+a-1,2] = mean
           }
         }
+        
       }
     }
-
-    return( num_adj );
+    
+    return( df_adjusted_confirmed_values );
   }
 
 #' Predict with or without adjusting the data
@@ -250,11 +262,9 @@ threshold <-
 #' @param next_n_days number of days in the prediction phase
 #' @param data state wise daily cases adjusted data for the given state
 #' @param adjusted predictions can be made with and without adjustment in data
-#' @param obs_arr array of observed number of daily confirmed cases
-#' @param num_adj array of adjusted number of daily confirmed cases
+#' @param df_adjusted_confirmed_values array of adjusted number of daily confirmed cases
 #' @param mu mortality rate of the infection
-#' @return graph showing the training phase and prediction of cumulative number of cases, data frame of cumulative cases in training and prediction phase,
-#' array of observed and predicted cumulative cases, mean square error of validation and prediction period
+#' @return graph showing the training phase and prediction of cumulative number of cases, data frame of cumulative cases in training and prediction phase, mean square error of validation and prediction period
 #' @importFrom pracma strcmp
 #' @importFrom utils tail
 #' @importFrom ggplot2 ggplot
@@ -280,39 +290,40 @@ sisd_cummulative<-
            next_n_days,
            data,
            adjusted,
-           obs_arr,
-           num_adj,
+           df_adjusted_confirmed_values,
            mu) {
+    
     min_mu = 0.001
     max_mu = 0.1
     mu_step = 0.001
     validation_period <- last_n_day
     Count <- Type <- Date <- NULL;
-
-    #Adjusting values of confirmed cases
+    
+    #Adjusting values of confirmed cases (for last_limit days before cur_day)
     if(adjusted){
-      act_data <- data
+      #create copy of data without adjustments
+      original_data <- data
       j <- cur_day-last_limit;
       ran <- 3*cur_day
-      ran_limit <- 3*(cur_day - last_limit-1);
+      ran_limit <- 3*(cur_day-last_limit-1);
       for (i in ran_limit:ran){
-        if (data[i,1] == 'Confirmed'){
-          data[i,3] <- num_adj[j]
+        if (data[i,1] == 'Confirmed' && data[i,2] == df_adjusted_confirmed_values[j,1]){
+          data[i,3] <- df_adjusted_confirmed_values[j,2]
           j <- j+1
         }
       }
     }
-
+    
     if (!missing(mu)) {
       min_mu = mu
       max_mu = mu
     }
-
+    
     dt <- vector()
     c <- vector()
     r <- vector()
     d <- vector()
-
+    
     for (i in 1:nrow(data)) {
       row <- data[i,]
       status <- row$Status
@@ -328,30 +339,30 @@ sisd_cummulative<-
       else if (strcmp(status, "Deceased"))
         d <- append(d, num)
     }
-
-
+    
+    #extract original data
     if(adjusted){
-      act_dt <- vector()
-      act_c <- vector()
-      act_r <- vector()
-      act_d <- vector()
-      for (i in 1:nrow(act_data)) {
-        row <- act_data[i,]
+      original_dt <- vector()
+      original_c <- vector()
+      original_r <- vector()
+      original_d <- vector()
+      for (i in 1:nrow(original_data)) {
+        row <- original_data[i,]
         status <- row$Status
         date <- toString(row$Date)
         num <- row$Count
         if(date %in% dt == FALSE)
-          act_dt <- append(act_dt, date)
+          original_dt <- append(original_dt, date)
         status <- toString(status)
         if (strcmp(status, "Confirmed"))
-          act_c <- append(act_c, num)
+          original_c <- append(original_c, num)
         else if (strcmp(status, "Recovered"))
-          act_r <- append(act_r, num)
+          original_r <- append(original_r, num)
         else if (strcmp(status, "Deceased"))
-          act_d <- append(act_d, num)
+          original_d <- append(original_d, num)
       }
     }
-
+    
     #Calculating the Cumulative cases using the data
     get_data <- function(dt, c, r, d, N) {
       sus <- vector()
@@ -386,14 +397,13 @@ sisd_cummulative<-
         )
       return(ret)
     }
-
-
+    
     odata <- get_data(dt, c, r, d, population)
     if(adjusted)
-      act_odata <- get_data(act_dt, act_c, act_r, act_d, population)
+      original_odata <- get_data(original_dt, original_c, original_r, original_d, population)
     else
-      act_odata <- odata
-
+      original_odata <- odata
+    
     #Used for estimating beta and mu
     sisd <-
       function(N,
@@ -442,7 +452,7 @@ sisd_cummulative<-
         )
         return(ret)
       }
-
+    
     #Used for prediction
     sisd_pred <-
       function(N,
@@ -488,20 +498,20 @@ sisd_cummulative<-
         )
         return(ret)
       }
-
+    
     best_last_n_days <- last_n_day
     best_beta <- -1
     best_mu <- -1
     avg_error <- Inf
     loss_limit <- last_n_day
-
+    
     itr <- 1
     while (itr <= last_limit) {
       itr <- itr+ 1
       mu1 = min_mu
       while (mu1 <= max_mu) {
         beta1 = 0.01
-
+        
         while (beta1 < 0.3) {
           ret <-
             sisd(
@@ -540,11 +550,11 @@ sisd_cummulative<-
       }
       last_n_day <- last_n_day + 1
     }
-
+    
     print(paste("Optimal mu = ", best_mu))
     print(paste("Optimal beta = ", best_beta))
     print(paste("Optimal training period = ", best_last_n_days))
-
+    
     train <-
       sisd(
         population,
@@ -571,8 +581,8 @@ sisd_cummulative<-
         odata$C,
         odata$D
       )
-
-
+    
+    
     df = data.frame(
       Day = integer(),
       Count = double(),
@@ -580,16 +590,16 @@ sisd_cummulative<-
       Date = as.Date(character()),
       stringsAsFactors = FALSE
     )
-
+    
     idx <- cur_day - best_last_n_days + 1
     while (idx <= cur_day+next_n_days ) {
       df[nrow(df) + 1, ] = list(odata$day[idx],
-                                act_odata$C[idx],
+                                original_odata$C[idx],
                                 "Observed",
                                 as.Date((odata$date[idx]), "%d-%b-%y"))
       idx <- idx + 1
     }
-
+    
     idx <- cur_day - best_last_n_days + 1
     idx1 <- 1
     while (idx <= cur_day) {
@@ -600,7 +610,7 @@ sisd_cummulative<-
       idx <- idx + 1
       idx1 <- idx1 + 1
     }
-
+    
     idx <- cur_day + 1
     idx1 <- 1
     nerr <- 0
@@ -609,44 +619,18 @@ sisd_cummulative<-
                                formatC(kk$C[idx1], digits = 2, format = "f"),
                                "Predicted",
                                as.Date(as.Date(start_date)+cur_day+idx1, "%d-%b-%y"))
-
+      
       idx <- idx + 1
       idx1 <- idx1 + 1
     }
     df = transform(df, Count = as.numeric(Count))
-
-    # Plotting predicted active cases
-    pred_active <- vector()
-    train_active <- vector()
-    obs <- vector()
-
-    idx <- 2
-    train_active <- append(train_active,train$C[idx-1]-odata$C[cur_day-best_last_n_days])
-    while (idx <= best_last_n_days ) {
-      train_active <- append(train_active,train$C[idx]-train$C[idx-1]);
-      idx <- idx+1
-    }
-
-    idx <- 2
-    pred_active <- append(pred_active,kk$C[idx-1]-odata$C[cur_day])
-    while (idx <=  next_n_days) {
-      pred_active <- append(pred_active,kk$C[idx]-kk$C[idx-1])
-      idx <- idx+1
-    }
-    pred <- c(train_active, pred_active)
-
-    idx <- cur_day-best_last_n_days+1
-    while(idx<=cur_day+next_n_days){
-      obs <- append(obs , odata$C[idx]-odata$C[idx-1])
-      idx <- idx+1;
-    }
-
-    #mse and r2
+    
+    #mse and r2 of prediction period
     observed_pred  <- vector()
     idx <- cur_day+1
     idx1 <- 1
     while(idx1<=next_n_days){
-      observed_pred <- append( observed_pred , act_odata$C[idx])
+      observed_pred <- append( observed_pred , original_odata$C[idx])
       idx1 <- idx1+1
       idx <- idx+1
     }
@@ -656,7 +640,7 @@ sisd_cummulative<-
     rsq = 1 - sres/stot
     prediction_mse <- format(round(sqrt(mean_sq), 2))
     print(paste("Root Mean Square error in predictions= ", format(round(sqrt(mean_sq), 2), nsmall = 2)))
-
+    
     #mse of validation period
     observed_val  <- vector()
     idx <- cur_day-validation_period+1
@@ -670,7 +654,7 @@ sisd_cummulative<-
     val_mean_sq = mean((observed_val-pred_train)**2)
     validation_mse <- format(round(sqrt(val_mean_sq), 2))
     print(paste("Root Mean Square error of validation period = ", format(round(sqrt(val_mean_sq), 2), nsmall = 2)))
-
+    
     if(adjusted){
       opt_col <- '#cc33ff'
       col <- '#0033cc'
@@ -679,7 +663,7 @@ sisd_cummulative<-
       opt_col <- '#006600'
       col <- '#ff3300'
     }
-
+    
     p <-
       ggplot(df, aes(
         x = Date,
@@ -687,13 +671,68 @@ sisd_cummulative<-
         shape = Type,
         color = Type
       )) + geom_point(size = 2) + scale_shape_manual(values = c(3, 16, 17))+scale_color_manual(values = c('#000000', opt_col, col ))
-
+    
     p <-
       p + scale_x_date(date_breaks = "10 day") + labs(y = "Cumulative Number of Cases", x = "Date") +
       theme(axis.text.x = element_text(angle = 35, hjust = 1))
-
-    return(list(p,df,obs,pred,prediction_mse,validation_mse))
+    
+    return(list(p,df,prediction_mse,validation_mse))
   }
+
+
+#' plots graph of daily cases with and without adjustment
+#' @description Visual representation of the adjustments made using a given metric.
+#' @param df_confirmed_values dataframe with two columns which contains dates and corresponding observed number of daily confirmed cases
+#' @param df_adjusted_confirmed_values dataframe with two columns which contains dates and corresponding adjusted number of daily confirmed cases
+#' @return graph showing number of confirmed daily cases with and without adjustment
+#' @export
+
+plot_adjustment <- function(df_confirmed_values,df_adjusted_confirmed_values){
+  date <- df_confirmed_values[,1]
+  num <- df_confirmed_values[,2]
+  num_adj <- df_adjusted_confirmed_values[,2]
+  # plot(x=seq(date), y=num, type="l", lty=1,col = 'red', xlab="days", ylab="daily cases", xaxt="n")
+  # lines(x=seq(date), y=num_adj, lty=2, col= 'blue')
+  # axis(side=1, at<-seq(date)[seq(1, length(seq(date)), 30)] , labels<-date[seq(1, length(date), 30)])
+  # par(xpd=FALSE)
+  # legend("topleft", legend=c("observed", "adjusted"), lty=1:2,ncol=1)
+  
+  df = data.frame(
+    Count = double(),
+    Type = character(),
+    Date = as.Date(character()),
+    stringsAsFactors = FALSE
+  )
+  
+  idx <- 1
+  while (idx <= length(num) ) {
+    df[nrow(df) + 1, ] = list(num[idx],
+                              "Observed",
+                              as.Date(date[idx], "%d-%b-%y"))
+    idx <- idx + 1
+  }
+  
+  idx <- 1
+  while (idx <= length(num) ) {
+    df[nrow(df) + 1, ] = list(num_adj[idx],
+                              "adjusted",
+                              as.Date(date[idx], "%d-%b-%y"))
+    idx <- idx + 1
+  }
+  
+  df = transform(df, Count = as.numeric(Count))
+  p <-
+    ggplot(df, aes(
+      x = Date,
+      y = Count,
+      group = Type
+    )) + geom_line(aes(color=Type))
+  p <-
+    p + scale_x_date(date_breaks = "60 day") + labs(y = "Daily Cases", x = "Date") +
+    theme(axis.text.x = element_text(angle = 35, hjust = 1))
+  
+  return (p)
+}
 
 #' Plots cumulative cases graph for original and adjusted predictions
 #' @description Provides a visual comparison between predictions made with and without the adjustments and the observed number of cases.
@@ -714,7 +753,7 @@ plot_cumulative <- function(output_original, output_adjusted){
   pred = pred[(length(pred)/4 +1 ): (length(pred)/2)]
   pred_original = c(ot, pred)
   pred_original_dates = c(ot_dates,pred_dates)
-
+  
   df = output_adjusted[2][[1]]
   ot = df[df[3] == "Optimaly Trained"]
   ot_dates = ot[(3*length(ot)/4+1):length(ot)]
@@ -724,7 +763,7 @@ plot_cumulative <- function(output_original, output_adjusted){
   pred = pred[(length(pred)/4 +1 ): (length(pred)/2)]
   pred_adjusted = c(ot, pred)
   pred_adjusted_dates = c(ot_dates,pred_dates)
-
+  
   pred_len = min(length(pred_adjusted),length(pred_original))
   pred_original = tail(pred_original,pred_len)
   pred_original_dates = tail(pred_original_dates,pred_len)
@@ -732,7 +771,7 @@ plot_cumulative <- function(output_original, output_adjusted){
   pred_adjusted_dates = tail(pred_adjusted_dates,pred_len)
   obs = tail(obs,pred_len)
   optimaly_trained_period = pred_len-length(pred)
-
+  
   Count <- Type <- Date <- NULL;
   df = data.frame(
     Count = double(),
@@ -761,7 +800,7 @@ plot_cumulative <- function(output_original, output_adjusted){
                              pred_original_dates[idx])
     idx <- idx + 1
   }
-
+  
   while (idx <= length(pred_adjusted)) {
     df[nrow(df) + 1,] = list(pred_adjusted[idx],
                              "Predicted Adjusted",
@@ -775,7 +814,7 @@ plot_cumulative <- function(output_original, output_adjusted){
                              pred_original_dates[idx])
     idx <- idx + 1
   }
-
+  
   df = transform(df, Count = as.numeric(Count))
   p <-
     ggplot(df, aes(
@@ -790,56 +829,6 @@ plot_cumulative <- function(output_original, output_adjusted){
   return (p)
 }
 
-#' plots graph of daily cases with and without adjustment
-#' @description Visual representation of the adjustments made using a given metric.
-#' @param date array of dates
-#' @param num array of observed number of daily confirmed cases
-#' @param num_adj array of adjusted number of daily confirmed cases
-#' @return graph showing number of confirmed daily cases with and without adjustment
-#' @export
-
-plot_adjustment <- function(date, num, num_adj){
-  #plot(x=seq(date), y=num, type="l", lty=1,col = 'red', xlab="days", ylab="daily cases", xaxt="n")
-  #lines(x=seq(date), y=num_adj, lty=2, col= 'blue')
-  #axis(side=1, at<-seq(date)[seq(1, length(seq(date)), 30)] , labels<-date[seq(1, length(date), 30)])
-  #par(xpd=FALSE)
-  #legend("topleft", legend=c("observed", "adjusted"), lty=1:2,ncol=1)
-
-  Count <- Type <- Date <- NULL;
-  df = data.frame(
-    Count = double(),
-    Type = character(),
-    Date = as.Date(character()),
-    stringsAsFactors = FALSE
-  )
-  idx <- 1
-  while (idx <= length(num) ) {
-    df[nrow(df) + 1, ] = list(num[idx],
-                              "Observed",
-                              as.Date(date[idx], "%d-%b-%y"))
-    idx <- idx + 1
-  }
-
-  idx <- 1
-  while (idx <= length(num) ) {
-    df[nrow(df) + 1, ] = list(num_adj[idx],
-                              "adjusted",
-                              as.Date(date[idx], "%d-%b-%y"))
-    idx <- idx + 1
-  }
-  df = transform(df, Count = as.numeric(Count))
-  p <-
-    ggplot(df, aes(
-      x = Date,
-      y = Count,
-      group = Type
-    )) + geom_line(aes(color=Type)) + ggtitle("Daily confirmed cases with and without adjustment")
-  p <-
-    p + scale_x_date(date_breaks = "60 day") + labs(y = "Daily Cases", x = "Date") +
-    theme(axis.text.x = element_text(angle = 35, hjust = 1))
-  return (p)
-}
-
 #' Identifies method with least error
 #' @description Compares the validation rmse using original and adjusted data and returns the one with lesser error.
 #' @param output_original output of sisd_cummulative for original state-wise data
@@ -848,19 +837,17 @@ plot_adjustment <- function(date, num, num_adj){
 #' @export
 
 comparing_results <- function(output_original,output_adjusted){
-  val_original <- output_original[6][[1]]
-  val_adjusted <- output_adjusted[6][[1]]
-
-  if(val_adjusted < val_original)
+  val_original <- output_original[4][[1]]
+  val_adjusted <- output_adjusted[4][[1]]
+  
+  if(as.double(val_adjusted) < as.double(val_original))
   {
     writeLines("Consider Adjusted Data")
-    return (list(output_adjusted[1],output_adjusted[5][[1]],output_adjusted[6][[1]]))
+    return (list(output_adjusted[1],output_adjusted[3][[1]],output_adjusted[4][[1]]))
   }
   else
   {
     writeLines("Consider Original Data")
-    return (list(output_original[1],output_original[5][[1]],output_original[6][[1]]))
+    return (list(output_original[1],output_original[3][[1]],output_original[4][[1]]))
   }
 }
-
-
